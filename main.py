@@ -29,9 +29,9 @@ LIGHTPINK = (255, 182, 193)
 pygame.init()
 clock = pygame.time.Clock()
 
-X = 1300
-Y = 1000
-screen = pygame.display.set_mode([X, Y])
+screen = pygame.display.set_mode((1200, 500), pygame.RESIZABLE)
+X = screen.get_width()
+Y = screen.get_height()
 pygame.display.set_caption("Particle Simulator")
 
 
@@ -110,10 +110,10 @@ def simulation(b1, b2, particle1, particle2, p_i, trace_colour, time, energy, sc
 
 
 # Displays options to select a particle, returns selection
-def display_menu():
+def display_menu(X, Y):
     text = guiClasses.big_font.render("Particle Simulation:", True, DARKGREY, WHITE)
     textRect = text.get_rect()
-    textRect.center = (X // 2, Y - 740)
+    textRect.center = (X // 2, Y // 10)
     screen.blit(text, textRect)
 
     preexisting = guiClasses.Button(LIGHTBLUE, ["Pre-existing"], X // 2 - 190 / 2, Y // 3 + 20, 190, 40)
@@ -124,6 +124,8 @@ def display_menu():
     while True:
         pygame.display.update()
         for event in pygame.event.get():
+            X = screen.get_width()
+            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -152,11 +154,13 @@ def display_sim_menu():
     shower = guiClasses.Button(RED, ["Particle Shower"], X // 2 - 190 / 2, Y // 3 + 70, 190, 40)
     shower.draw(screen)
 
-    stats_screen([p1, p2])
+    stats_screen([p1, p2], X, Y)
 
     while True:
         pygame.display.update()
         for event in pygame.event.get():
+            X = screen.get_width()
+            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -254,7 +258,7 @@ def stats_screen(particles):
 # Takes the input of the user to determine what particles should be selected as well as the energy
 def main_preexisting(dropdown1, dropdown2, energyBox, previous_option1,
                      previous_energy1, previous_option2,
-                     back_button):
+                     back_button, X, Y):
     p1 = ""
     p2 = ""
     enter = guiClasses.Button(GREEN, ["ENTER"], X - 70 - 190, 360 + 500, 190, 40)
@@ -262,7 +266,8 @@ def main_preexisting(dropdown1, dropdown2, energyBox, previous_option1,
 
     while True:
         for event in pygame.event.get():
-
+            X = screen.get_width()
+            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -304,7 +309,7 @@ def main_preexisting(dropdown1, dropdown2, energyBox, previous_option1,
         text = guiClasses.big_font.render("ENTER REQUIREMENTS:", True, RED, WHITE)
         textRect = text.get_rect()
         textRect.center = (253, 130)
-        stats_screen([p1, p2])
+        stats_screen([p1, p2], X, Y)
         screen.blit(text, textRect)
 
         for d in dropdown1:
@@ -328,7 +333,8 @@ def main_custom(mass1, charge1, energyBox, mass2, charge2, back_button):
 
     while True:
         for event in pygame.event.get():
-
+            X = screen.get_width()
+            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -411,7 +417,8 @@ def get_energy(energyBox, filenameBox, back_button):
 
     while True:
         for event in pygame.event.get():
-
+            X = screen.get_width()
+            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -517,7 +524,8 @@ def main_interaction(p1, p2, energy, back_button, record):
                                               time_scaling.text)
 
         for event in pygame.event.get():
-
+            X = screen.get_width()
+            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -698,7 +706,7 @@ if __name__ == "__main__":
         while True:  # first initialises home screen
             screen.fill(WHITE)
             pygame.draw.rect(screen, RED, pygame.Rect(0, 0, X, Y), width=5)
-            option = display_menu()
+            option = display_menu(X, Y)
             back_button = guiClasses.Button(TEAL, ["MENU"], 70, 360 + 500, 80, 40)
 
             if option == "preexisting":  # for user choosing to use a pre-defined particle
@@ -735,7 +743,7 @@ if __name__ == "__main__":
                 previous_option2 = ""
                 # Calls function main_preexisting to allow user input
                 p1, p2, energy, back = main_preexisting(dropdown1, dropdown2, energy1, previous_option1,
-                                                        previous_energy1, previous_option2, back_button)
+                                                        previous_energy1, previous_option2, back_button, X, Y)
                 if not back:
                     screen_blank()
                     break
