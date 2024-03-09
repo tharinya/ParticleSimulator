@@ -29,18 +29,20 @@ LIGHTPINK = (255, 182, 193)
 pygame.init()
 clock = pygame.time.Clock()
 
-screen = pygame.display.set_mode((1200, 500), pygame.RESIZABLE)
-X = screen.get_width()
-Y = screen.get_height()
+X = 1200
+Y = 700
+window = guiClasses.Main(pygame.display.set_mode((X, Y), pygame.RESIZABLE))
+
 pygame.display.set_caption("Particle Simulator")
 
 
-def screen_blank():
-    screen.fill(WHITE)
-    pygame.draw.rect(screen, BLACK, pygame.Rect(0, 0, X, Y), 5)
+def screen_blank(border_colour):
+    window.screen.fill(WHITE)
+    pygame.draw.rect(window.screen, border_colour,
+                     pygame.Rect(0, 0, window.screen.get_width(), window.screen.get_height()), 5)
 
 
-screen_blank()
+screen_blank(BLACK)
 
 
 # Defining the Vector class which is used to deal with the two dimensions the particles can move in
@@ -79,9 +81,10 @@ def real_pygame(n, scale):
 
 
 # Calculates the new position of the interacting particle
-def simulation(b1, b2, particle1, particle2, p_i, trace_colour, time, energy, scale=-21, timescale=10 ** (-30) / 2):
+def simulation(b1, b2, particle1, particle2, p_i, trace_colour, running_time, energy, scale=-21,
+               timescale=10 ** (-30) / 2):
     eps0 = 8.85 * 10 ** (-12)  # epsilon0, the permittivity of free space
-    t = 5*10**timescale  # deltat, a small change in t
+    t = 5 * 10 ** timescale  # deltat, a small change in t
     b1vector = Vector(pygame_real(b1.centre[0], scale), pygame_real(b1.centre[1],
                                                                     scale))  # vectors to describe the current centre of the markers in real scaling
     b2vector = Vector(pygame_real(b2.centre[0], scale), pygame_real(b2.centre[1], scale))
@@ -102,73 +105,75 @@ def simulation(b1, b2, particle1, particle2, p_i, trace_colour, time, energy, sc
     b1.update_pos(
         (new_x, new_y))  # a setter method is used to change the centre of the ball to the newly calculated position
     trace = guiClasses.Ball(new_x, new_y, 2, "", trace_colour)  # a trace is made in the same position
-    if ocentre == b2.centre or new_x <= 0 or new_x >= X or new_y <= 0 or new_y >= Y:  # checking for overlap and that the new position is within the bounds of the screen
-        return b1vector.x, b1vector.y, time + t, True, Vector(
+    if ocentre == b2.centre or new_x <= 0 or new_x >= window.screen.get_width() or new_y <= 0 or new_y >= window.screen.get_height():  # checking for overlap and that the new position is within the bounds of the screen
+        return b1vector.x, b1vector.y, running_time + t, True, Vector(
             float(energy) * (10 ** 6) * 1.6 * (10 ** (-19)) / 3 / (10 ** 8) * (2 ** 0.5),
             0), trace  # returns the newly calculated position, the time elapsed since the start of the simulation, that the simulation has finished, the original momentum so that the simulation can start again, and the trace
-    return b1vector.x, b1vector.y, time + t, False, p, trace  # returns the newly calculated position, the time elapsed since the start of the simulation, that the simulation should continue, the momentum, and the trace
+    return b1vector.x, b1vector.y, running_time + t, False, p, trace  # returns the newly calculated position, the time elapsed since the start of the simulation, that the simulation should continue, the momentum, and the trace
 
 
 # Displays options to select a particle, returns selection
-def display_menu(X, Y):
-    text = guiClasses.big_font.render("Particle Simulation:", True, DARKGREY, WHITE)
-    textRect = text.get_rect()
-    textRect.center = (X // 2, Y // 10)
-    screen.blit(text, textRect)
+def display_menu():
+    preexisting = guiClasses.Button(LIGHTBLUE, ["Pre-existing"], window.screen.get_width() // 2 - 190 / 2,
+                                    window.screen.get_height() // 3 + 20, 190, 40)
 
-    preexisting = guiClasses.Button(LIGHTBLUE, ["Pre-existing"], X // 2 - 190 / 2, Y // 3 + 20, 190, 40)
-    preexisting.draw(screen)
-    custom = guiClasses.Button(LIGHTORANGE, ["Custom"], X // 2 - 190 / 2, Y // 3 + 70, 190, 40)
-    custom.draw(screen)
+    custom = guiClasses.Button(LIGHTORANGE, ["Custom"], window.screen.get_width() // 2 - 190 / 2,
+                               window.screen.get_height() // 3 + 70, 190, 40)
 
     while True:
-        pygame.display.update()
         for event in pygame.event.get():
-            X = screen.get_width()
-            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                preexisting.check_click(screen, event)
-                custom.check_click(screen, event)
+                preexisting.check_click(window.screen, event)
+                custom.check_click(window.screen, event)
 
                 if preexisting.state:
                     return "preexisting"
                 if custom.state:
                     return "custom"
 
+        screen_blank(LIGHTPINK)
+        text = guiClasses.big_font.render("Particle Simulation:", True, DARKGREY, WHITE)
+        text_rect = text.get_rect()
+        text_rect.center = (window.screen.get_width() // 2, window.screen.get_height() // 10)
+        window.screen.blit(text, text_rect)
+        preexisting.draw(window.screen)
+        custom.draw(window.screen)
+        pygame.display.update()
+
 
 # Displays options for particle interaction, returns selection
 def display_sim_menu():
     text = guiClasses.big_font.render("Simulation Options:", True, DARKGREY, WHITE)
     textRect = text.get_rect()
-    textRect.center = (X // 2, Y - 740)
-    screen.blit(text, textRect)
+    textRect.center = (window.screen.get_width() // 2, window.screen.get_height() - 740)
+    window.screen.blit(text, textRect)
 
     back = guiClasses.Button(TEAL, ["BACK"], 70, 360 + 500, 120, 40)
-    back.draw(screen)
-    interaction = guiClasses.Button(YELLOW, ["Interaction"], X // 2 - 190 / 2, Y // 3 + 20, 190, 40)
-    interaction.draw(screen)
-    shower = guiClasses.Button(RED, ["Particle Shower"], X // 2 - 190 / 2, Y // 3 + 70, 190, 40)
-    shower.draw(screen)
+    back.draw(window.screen)
+    interaction = guiClasses.Button(YELLOW, ["Interaction"], window.screen.get_width() // 2 - 190 / 2,
+                                    window.screen.get_height() // 3 + 20, 190, 40)
+    interaction.draw(window.screen)
+    shower = guiClasses.Button(RED, ["Particle Shower"], window.screen.get_width() // 2 - 190 / 2,
+                               window.screen.get_height() // 3 + 70, 190, 40)
+    shower.draw(window.screen)
 
-    stats_screen([p1, p2], X, Y)
+    stats_screen([p1, p2])
 
     while True:
         pygame.display.update()
         for event in pygame.event.get():
-            X = screen.get_width()
-            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                interaction.check_click(screen, event)
-                shower.check_click(screen, event)
-                back.check_click(screen, event)
+                interaction.check_click(window.screen, event)
+                shower.check_click(window.screen, event)
+                back.check_click(window.screen, event)
 
                 if interaction.state:
                     return "interaction"
@@ -179,26 +184,27 @@ def display_sim_menu():
 
 
 def error(message):
-    error_message = guiClasses.WriteBox(X - 350, 120, 280, 40, "Error:", RED, string=message)
-    error_message.draw(screen)
+    error_message = guiClasses.WriteBox(window.screen.get_width() - 350, 120, 280, 40, "Error:", RED, string=message)
+    error_message.draw(window.screen)
     pygame.display.update()
     time.sleep(2)
 
 
 # Displays the statistics of the chosen particle
 def stats_screen(particles):
-    options_xb = X / 10 + 35
-    options = guiClasses.WriteBox(options_xb + 6, Y - 476 - 20 - 120, 300, 350, "", DARKGREY, string="")
-    options.draw(screen)
+    options_xb = X / 9 + 31
+    options = guiClasses.WriteBox(options_xb + 6, Y // 3, 300, 350, "", DARKGREY, string="")
+    options.draw(window.screen)
 
     options_x = options_xb + 6
-    options = guiClasses.WriteBox(options_x + 6, Y - 470 - 20 - 120, 288, 338, "", GREEN, string="")
-    options.draw(screen)
+    options = guiClasses.WriteBox(options_x + 6, Y // 3 + 6, 288, 338, "", GREEN, string="")
+    options.draw(window.screen)
 
     title = guiClasses.big_font.render(f"STATS:", True, DARKGREY, WHITE)
     textRect = title.get_rect()
-    textRect.center = (150 + options_x, Y - 420 - 120)
-    screen.blit(title, textRect)
+    y = Y // 3 + 60
+    textRect.center = (150 + options_x, y - 20)
+    window.screen.blit(title, textRect)
 
     try:
         name1 = guiClasses.base_font.render(f"Name: {particles[0]._name}", True, DARKGREY, WHITE)
@@ -206,8 +212,8 @@ def stats_screen(particles):
         name1 = guiClasses.base_font.render(f"Name: ", True, DARKGREY, WHITE)
 
     textRect1 = name1.get_rect()
-    textRect1.center = (150 + options_x, Y - 350 - 120)
-    screen.blit(name1, textRect1)
+    textRect1.center = (150 + options_x, y + 20)
+    window.screen.blit(name1, textRect1)
 
     try:
         name1 = guiClasses.base_font.render(f"Mass: {particles[0]._mass}MeV/c^2", True, DARKGREY, WHITE)
@@ -215,8 +221,8 @@ def stats_screen(particles):
         name1 = guiClasses.base_font.render(f"Mass: ", True, DARKGREY, WHITE)
 
     textRect1 = name1.get_rect()
-    textRect1.center = (150 + options_x, Y - 350 + 20 - 120)
-    screen.blit(name1, textRect1)
+    textRect1.center = (150 + options_x, y + 40)
+    window.screen.blit(name1, textRect1)
 
     try:
         name1 = guiClasses.base_font.render(f"Charge: {particles[0]._charge}e", True, DARKGREY, WHITE)
@@ -224,8 +230,8 @@ def stats_screen(particles):
         name1 = guiClasses.base_font.render(f"Charge: ", True, DARKGREY, WHITE)
 
     textRect1 = name1.get_rect()
-    textRect1.center = (150 + options_x, Y - 350 + 40 - 120)
-    screen.blit(name1, textRect1)
+    textRect1.center = (150 + options_x, y + 60)
+    window.screen.blit(name1, textRect1)
 
     try:
         name2 = guiClasses.base_font.render(f"Name: {particles[1]._name}", True, DARKGREY, WHITE)
@@ -233,8 +239,8 @@ def stats_screen(particles):
         name2 = guiClasses.base_font.render(f"Name: ", True, DARKGREY, WHITE)
 
     textRect1 = name2.get_rect()
-    textRect1.center = (150 + options_x, Y - 350 + 80 - 120)
-    screen.blit(name2, textRect1)
+    textRect1.center = (150 + options_x, y + 120)
+    window.screen.blit(name2, textRect1)
 
     try:
         name2 = guiClasses.base_font.render(f"Mass: {particles[1]._mass}MeV/c^2", True, DARKGREY, WHITE)
@@ -242,8 +248,8 @@ def stats_screen(particles):
         name2 = guiClasses.base_font.render(f"Mass: ", True, DARKGREY, WHITE)
 
     textRect1 = name2.get_rect()
-    textRect1.center = (150 + options_x, Y - 350 + 100 - 120)
-    screen.blit(name2, textRect1)
+    textRect1.center = (150 + options_x, y + 140)
+    window.screen.blit(name2, textRect1)
 
     try:
         name2 = guiClasses.base_font.render(f"Charge: {particles[1]._charge}e", True, DARKGREY, WHITE)
@@ -251,35 +257,33 @@ def stats_screen(particles):
         name2 = guiClasses.base_font.render(f"Charge: ", True, DARKGREY, WHITE)
 
     textRect1 = name2.get_rect()
-    textRect1.center = (150 + options_x, Y - 350 + 120 - 120)
-    screen.blit(name2, textRect1)
+    textRect1.center = (150 + options_x, y + 160)
+    window.screen.blit(name2, textRect1)
 
 
 # Takes the input of the user to determine what particles should be selected as well as the energy
-def main_preexisting(dropdown1, dropdown2, energyBox, previous_option1,
-                     previous_energy1, previous_option2,
-                     back_button, X, Y):
+def main_preexisting(dropdown1, dropdown2, energyBox):
     p1 = ""
     p2 = ""
-    enter = guiClasses.Button(GREEN, ["ENTER"], X - 70 - 190, 360 + 500, 190, 40)
     breaking = False
 
     while True:
+        back_button = guiClasses.Button(TEAL, ["MENU"], 70, window.screen.get_height() // 10 * 8, 80, 40)
+        enter = guiClasses.Button(GREEN, ["ENTER"], window.screen.get_width() // 10 * 8,
+                                  window.screen.get_height() // 10 * 8, 190, 40)
         for event in pygame.event.get():
-            X = screen.get_width()
-            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                energyBox.check_click(screen, event)
-                enter.check_click(screen, event)
-                back_button.check_click(screen, event)
+                energyBox.check_click(window.screen, event)
+                enter.check_click(window.screen, event)
+                back_button.check_click(window.screen, event)
                 for d in dropdown1:
-                    d.check_click(screen, event, dropdown1)
+                    d.check_click(window.screen, event, dropdown1)
                 for d in dropdown2:
-                    d.check_click(screen, event, dropdown2)
+                    d.check_click(window.screen, event, dropdown2)
                 p1 = optionsobj[options.index(
                     dropdown1[0].string)]  # the particles are selected based on a lookup of the objects list
                 p2 = optionsobj[options.index(dropdown2[0].string)]
@@ -289,10 +293,7 @@ def main_preexisting(dropdown1, dropdown2, energyBox, previous_option1,
                 if event.key == pygame.K_RETURN:
                     if energyBox.state:
                         energyBox.state = 0
-                    enter.check_click(screen, event, True)
-
-                elif event.key == pygame.K_TAB:
-                    energyBox.string = previous_energy1
+                    enter.check_click(window.screen, event, True)
 
                 else:
                     energyBox.write(event)
@@ -304,21 +305,20 @@ def main_preexisting(dropdown1, dropdown2, energyBox, previous_option1,
         if back_button.state:
             return None, None, None, True
 
-        screen.fill(WHITE)
-        pygame.draw.rect(screen, LIGHTBLUE, pygame.Rect(0, 0, X, Y), width=5)
+        screen_blank(LIGHTBLUE)
         text = guiClasses.big_font.render("ENTER REQUIREMENTS:", True, RED, WHITE)
-        textRect = text.get_rect()
-        textRect.center = (253, 130)
-        stats_screen([p1, p2], X, Y)
-        screen.blit(text, textRect)
+        text_rect = text.get_rect()
+        text_rect.center = (window.screen.get_width() // 2, window.screen.get_height() // 10)
+        window.screen.blit(text, text_rect)
+        stats_screen([p1, p2])
 
         for d in dropdown1:
-            d.draw(screen)
+            d.draw(window.screen)
         for d in dropdown2:
-            d.draw(screen)
-        enter.draw(screen)
-        energyBox.draw(screen)
-        back_button.draw(screen)
+            d.draw(window.screen)
+        enter.draw(window.screen)
+        energyBox.draw(window.screen)
+        back_button.draw(window.screen)
 
         pygame.display.update()
         clock.tick(120)
@@ -327,26 +327,25 @@ def main_preexisting(dropdown1, dropdown2, energyBox, previous_option1,
 
 
 # Takes more inputs from the user to create a custom particle
-def main_custom(mass1, charge1, energyBox, mass2, charge2, back_button):
-    enter = guiClasses.Button(GREEN, ["ENTER"], X - 70 - 190, 360 + 500, 190, 40)
+def main_custom(mass1, charge1, energyBox, mass2, charge2):
     breaking = False
 
     while True:
+        enter = guiClasses.Button(GREEN, ["ENTER"], window.screen.get_width() - 70 - 190, window.screen.get_height() // 10 * 8, 190, 40)
+        back_button = guiClasses.Button(TEAL, ["MENU"], 70, window.screen.get_height() // 10 * 8, 80, 40)
         for event in pygame.event.get():
-            X = screen.get_width()
-            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                mass1.check_click(screen, event)
-                charge1.check_click(screen, event)
-                energyBox.check_click(screen, event)
-                mass2.check_click(screen, event)
-                charge2.check_click(screen, event)
-                enter.check_click(screen, event)
-                back_button.check_click(screen, event)
+                mass1.check_click(window.screen, event)
+                charge1.check_click(window.screen, event)
+                energyBox.check_click(window.screen, event)
+                mass2.check_click(window.screen, event)
+                charge2.check_click(window.screen, event)
+                enter.check_click(window.screen, event)
+                back_button.check_click(window.screen, event)
 
             if event.type == pygame.KEYDOWN:
 
@@ -365,10 +364,8 @@ def main_custom(mass1, charge1, energyBox, mass2, charge2, back_button):
                         charge2.state = 1
                     elif charge2.state:
                         charge2.state = 0
-                        enter.check_click(screen, event, True)
+                        enter.check_click(window.screen, event, True)
 
-                elif event.key == pygame.K_TAB:
-                    energyBox.string = previous_energy1
 
                 else:
                     mass1.write(event)
@@ -387,22 +384,23 @@ def main_custom(mass1, charge1, energyBox, mass2, charge2, back_button):
         if back_button.state:
             return None, None, None, True
 
-        screen.fill(WHITE)
-        pygame.draw.rect(screen, LIGHTBLUE, pygame.Rect(0, 0, X, Y), width=5)
+        window.screen.fill(WHITE)
+        pygame.draw.rect(window.screen, LIGHTBLUE,
+                         pygame.Rect(0, 0, window.screen.get_width(), window.screen.get_height()), width=5)
         text = guiClasses.big_font.render("ENTER REQUIREMENTS:", True, RED, WHITE)
         textRect = text.get_rect()
         textRect.center = (253, 130)
-        screen.blit(text, textRect)
+        window.screen.blit(text, textRect)
 
-        enter.draw(screen)
-        back_button.draw(screen)
+        enter.draw(window.screen)
+        back_button.draw(window.screen)
 
-        mass1.draw(screen)
-        charge1.draw(screen)
-        energyBox.draw(screen)
+        mass1.draw(window.screen)
+        charge1.draw(window.screen)
+        energyBox.draw(window.screen)
 
-        mass2.draw(screen)
-        charge2.draw(screen)
+        mass2.draw(window.screen)
+        charge2.draw(window.screen)
 
         pygame.display.update()
         clock.tick(240)
@@ -412,22 +410,20 @@ def main_custom(mass1, charge1, energyBox, mass2, charge2, back_button):
 
 # An intermediary screen between the second menu and the particle shower simulation allowing the user to input an energy
 def get_energy(energyBox, filenameBox, back_button):
-    enter = guiClasses.Button(GREEN, ["ENTER"], X - 70 - 190, 360 + 500, 190, 40)
+    enter = guiClasses.Button(GREEN, ["ENTER"], window.screen.get_width() - 70 - 190, 360 + 500, 190, 40)
     breaking = False
 
     while True:
         for event in pygame.event.get():
-            X = screen.get_width()
-            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                energyBox.check_click(screen, event)
-                filenameBox.check_click(screen, event)
-                enter.check_click(screen, event)
-                back_button.check_click(screen, event)
+                energyBox.check_click(window.screen, event)
+                filenameBox.check_click(window.screen, event)
+                enter.check_click(window.screen, event)
+                back_button.check_click(window.screen, event)
 
             if event.type == pygame.KEYDOWN:
 
@@ -448,18 +444,19 @@ def get_energy(energyBox, filenameBox, back_button):
         if back_button.state:
             return None, None, True
 
-        screen.fill(WHITE)
-        pygame.draw.rect(screen, LIGHTPINK, pygame.Rect(0, 0, X, Y), width=5)
+        window.screen.fill(WHITE)
+        pygame.draw.rect(window.screen, LIGHTPINK,
+                         pygame.Rect(0, 0, window.screen.get_width(), window.screen.get_height()), width=5)
         text = guiClasses.big_font.render("ENTER REQUIREMENTS:", True, RED, WHITE)
         textRect = text.get_rect()
         textRect.center = (253, 130)
-        screen.blit(text, textRect)
+        window.screen.blit(text, textRect)
 
-        enter.draw(screen)
-        back_button.draw(screen)
+        enter.draw(window.screen)
+        back_button.draw(window.screen)
 
-        energyBox.draw(screen)
-        filenameBox.draw(screen)
+        energyBox.draw(window.screen)
+        filenameBox.draw(window.screen)
 
         pygame.display.update()
         clock.tick(240)
@@ -479,11 +476,15 @@ def main_interaction(p1, p2, energy, back_button, record):
 
     timecount = 0
 
-    play = guiClasses.Button(GREEN, ["PLAY", "PAUSE"], X - 70 - 190, 360 + 500, 190, 40)  # play/pause button
-    graph = guiClasses.Button(ORANGE, ["COMPARE"], X - 70 - 190, 360 + 450, 190, 40)  # button to display graphs
-    clear = guiClasses.Button(YELLOW, ["CLEAR"], X - 70 - 190, 360 + 400, 190, 40)
-    scaling = guiClasses.Combination(LIGHTPINK, "1px:", "", X - 70 - 190, 360 + 350, 190, 40, "10^-21m")
-    time_scaling = guiClasses.Combination(LIGHTBLUE, "1 frame:", "", X - 70 - 190, 360 + 300, 190, 40, "5*10^-31s")
+    play = guiClasses.Button(GREEN, ["PLAY", "PAUSE"], window.screen.get_width // 10 * 8, window.screen.get_height // 2 + 150, 190,
+                             40)  # play/pause button
+    graph = guiClasses.Button(ORANGE, ["COMPARE"], window.screen.get_width // 10 * 8, window.screen.get_height // 2 + 100, 190,
+                              40)  # button to display graphs
+    clear = guiClasses.Button(YELLOW, ["CLEAR"], window.screen.get_width // 10 * 8, window.screen.get_height // 2 + 50, 190, 40)
+    scaling = guiClasses.Combination(LIGHTPINK, "1px:", "", window.screen.get_width // 10 * 8, window.screen.get_height // 2, 190, 40,
+                                     "10^-21m")
+    time_scaling = guiClasses.Combination(LIGHTBLUE, "1 frame:", "", window.screen.get_width // 10 * 8, window.screen.get_height // 2 - 50,
+                                          190, 40, "5*10^-31s")
 
     traces = []  # list containing all traces (previous positions as Ball objects)
 
@@ -497,7 +498,8 @@ def main_interaction(p1, p2, energy, back_button, record):
     error_found = False
     trace_colour = randomcolor.RandomColor().generate(format_="rgb")[0][4:-2].split(",")
     trace_colour = tuple(
-        [int(i.lstrip()) if i != "" else 0 for i in trace_colour])  # a random colour generated so the traces are all different colours
+        [int(i.lstrip()) if i != '' else 0 for i in
+         trace_colour])  # a random colour generated so the traces are all different colours
     if energy == "":
         energy = 0
 
@@ -517,33 +519,32 @@ def main_interaction(p1, p2, energy, back_button, record):
         gen_p1 = guiClasses.Button(LIGHTBLUE, ["P1"], 100, Y // 2 - 100, 40,
                                    40)  # buttons for the dynamic generation of Ball objects to be used as markers
         gen_p2 = guiClasses.Button(LIGHTPINK, ["P2"], 100, Y // 2 + 100, 40, 40)
-        scaling = guiClasses.Combination(LIGHTPINK, "1px:", "", X - 70 - 190, 360 + 350, 190, 40,
+        scaling = guiClasses.Combination(LIGHTPINK, "1px:", "", X - 70 - 190, Y // 2, 190, 40,
                                          "10^" + str(scale) + "m", scaling.text)
-        time_scaling = guiClasses.Combination(LIGHTBLUE, "1 frame:", "", X - 70 - 190, 360 + 300, 190, 40,
+        time_scaling = guiClasses.Combination(LIGHTBLUE, "1 frame:", "", X - 70 - 190, Y // 2 - 50, 190, 40,
                                               "5*10^" + str(time_scale) + "m",
                                               time_scaling.text)
 
         for event in pygame.event.get():
-            X = screen.get_width()
-            Y = screen.get_height()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                gen_p1.check_click(screen, event)
-                gen_p2.check_click(screen, event)
-                play.check_click(screen, event)
-                graph.check_click(screen, event)
-                clear.check_click(screen, event)
-                back_button.check_click(screen, event)
+                gen_p1.check_click(window.screen, event)
+                gen_p2.check_click(window.screen, event)
+                play.check_click(window.screen, event)
+                graph.check_click(window.screen, event)
+                clear.check_click(window.screen, event)
+                back_button.check_click(window.screen, event)
                 if play.string != "PAUSE":
-                    scaling.check_click(screen, event)
-                    time_scaling.check_click(screen, event)
+                    scaling.check_click(window.screen, event)
+                    time_scaling.check_click(window.screen, event)
 
                 for p in p1s:
                     if event.button == 1:
-                        p.check_click(screen, event)  # checking if one of the draggable markers has been clicked on
+                        p.check_click(window.screen,
+                                      event)  # checking if one of the draggable markers has been clicked on
                         if p.state:
                             rectangle_dragging = True  # if it has been clicked on, the offset of the mouse is recorded and the tracking variable is set to True
                             mouse_x, mouse_y = event.pos
@@ -586,12 +587,14 @@ def main_interaction(p1, p2, energy, back_button, record):
 
         try:
             if gen_p1.state:
-                p1s.append(guiClasses.Ball(X // 2, Y // 2, 10, p1._symbol,
-                                           LIGHTBLUE))  # dynamic generation of marker objects to be used in the simulations
+                p1s.append(
+                    guiClasses.Ball(window.screen.get_width() // 2, window.screen.get_height() // 2, 10, p1._symbol,
+                                    LIGHTBLUE))  # dynamic generation of marker objects to be used in the simulations
                 action = True
 
             elif gen_p2.state:
-                p2s.append(guiClasses.Ball(X // 2 + 400, Y // 2, 10, p2._symbol, LIGHTPINK))
+                p2s.append(guiClasses.Ball(window.screen.get_width() // 2 + 100, window.screen.get_height() // 2, 10,
+                                           p2._symbol, LIGHTPINK))
                 action = True
         except AttributeError:
             error("Incorrectly formatted data")
@@ -612,7 +615,7 @@ def main_interaction(p1, p2, energy, back_button, record):
 
             except IndexError:
                 # noinspection PyUnboundLocalVariable
-                play.check_click(screen, event,
+                play.check_click(window.screen, event,
                                  True)  # an IndexError will occur if there is no queue of particles so the pause button is automatically pressed
                 break
         if scaling.up_arrow.state:
@@ -651,7 +654,7 @@ def main_interaction(p1, p2, energy, back_button, record):
             p1s = p1s[1::]  # the previous marker is deleted
             try:
                 # noinspection PyUnboundLocalVariable
-                play.check_click(screen, event, True)
+                play.check_click(window.screen, event, True)
             except AttributeError:
                 play.state = 0
             trace_colour = randomcolor.RandomColor().generate(format_="rgb")[0][4:-2].split(
@@ -659,35 +662,36 @@ def main_interaction(p1, p2, energy, back_button, record):
             trace_colour = tuple(
                 [int(i.lstrip()) if i != "" else 0 for i in trace_colour])
 
-        screen.fill(WHITE)
-        pygame.draw.rect(screen, LIGHTBLUE, pygame.Rect(0, 0, X, Y), width=5)
+        window.screen.fill(WHITE)
+        pygame.draw.rect(window.screen, LIGHTBLUE,
+                         pygame.Rect(0, 0, window.screen.get_width(), window.screen.get_height()), width=5)
         text = guiClasses.big_font.render("INTERACTION SIMULATION:", True, RED, WHITE)
         textRect = text.get_rect()
         textRect.center = (253, 130)
-        screen.blit(text, textRect)
+        window.screen.blit(text, textRect)
 
         for t in traces:
-            error_found = t.draw(screen)
+            error_found = t.draw(window.screen)
             if error_found:
                 break
         if error_found:
             error("Invalid position")
             return True
 
-        clear.draw(screen)
-        play.draw(screen)
-        graph.draw(screen)
-        back_button.draw(screen)
-        scaling.draw(screen)
-        time_scaling.draw(screen)
+        clear.draw(window.screen)
+        play.draw(window.screen)
+        graph.draw(window.screen)
+        back_button.draw(window.screen)
+        scaling.draw(window.screen)
+        time_scaling.draw(window.screen)
 
-        gen_p1.draw(screen)
-        gen_p2.draw(screen)
+        gen_p1.draw(window.screen)
+        gen_p2.draw(window.screen)
 
         for p in p1s:
-            p.draw(screen)
+            p.draw(window.screen)
         for p in p2s:
-            p.draw(screen)
+            p.draw(window.screen)
 
         pygame.display.update()
         clock.tick(120)
@@ -704,10 +708,10 @@ def main_interaction(p1, p2, energy, back_button, record):
 if __name__ == "__main__":
     while True:
         while True:  # first initialises home screen
-            screen.fill(WHITE)
-            pygame.draw.rect(screen, RED, pygame.Rect(0, 0, X, Y), width=5)
-            option = display_menu(X, Y)
-            back_button = guiClasses.Button(TEAL, ["MENU"], 70, 360 + 500, 80, 40)
+            window.screen.fill(WHITE)
+            pygame.draw.rect(window.screen, RED,
+                             pygame.Rect(0, 0, window.screen.get_width(), window.screen.get_height()), width=5)
+            option = display_menu()
 
             if option == "preexisting":  # for user choosing to use a pre-defined particle
                 # Selects all Lepton objects and Hadron objects for optionsobj and selects their names for options
@@ -738,14 +742,10 @@ if __name__ == "__main__":
                 dropdown2 = [guiClasses.DropDown(LIGHTPINK, [options[i]], 750, 180, 240, 40, i) for i in
                              range(len(options))]
 
-                previous_option1 = ""
-                previous_energy1 = ""
-                previous_option2 = ""
                 # Calls function main_preexisting to allow user input
-                p1, p2, energy, back = main_preexisting(dropdown1, dropdown2, energy1, previous_option1,
-                                                        previous_energy1, previous_option2, back_button, X, Y)
+                p1, p2, energy, back = main_preexisting(dropdown1, dropdown2, energy1)
                 if not back:
-                    screen_blank()
+                    screen_blank(RED)
                     break
 
             elif option == "custom":  # user chooses to define their own particle
@@ -756,18 +756,18 @@ if __name__ == "__main__":
                 mass2 = guiClasses.WriteBox(600, 180, 150, 40, "Mass:", start_string="MeV/c^")
                 charge2 = guiClasses.WriteBox(600, 240, 150, 40, "Charge:", start_string="e")
 
-                p1, p2, energy, back = main_custom(mass1, charge1, energy1, mass2, charge2,
-                                                   back_button)  # calling the main_custom function
+                p1, p2, energy, back = main_custom(mass1, charge1, energy1, mass2, charge2)  # calling the main_custom function
 
                 if not back:
                     screen_blank()
                     break
 
         while True:  # the particle has now been picked and the next option screen is shown
-            screen.fill(WHITE)
-            pygame.draw.rect(screen, RED, pygame.Rect(0, 0, X, Y), width=5)
+            window.screen.fill(WHITE)
+            pygame.draw.rect(window.screen, RED,
+                             pygame.Rect(0, 0, window.screen.get_width(), window.screen.get_height()), width=5)
             option = display_sim_menu()  # displays options for simulation
-            options = guiClasses.Button(TEAL, ["OPTIONS"], 70, 360 + 500, 120, 40)
+            options = guiClasses.Button(TEAL, ["OPTIONS"], 70, window.screen.get_height() // 10 * 8, 120, 40)
             record = []
 
             if option == "interaction":  # particle to particle interaction
@@ -776,15 +776,16 @@ if __name__ == "__main__":
                     break
 
             elif option == "shower":  # particle shower simulation
+                back_button = guiClasses.Button(TEAL, ["MENU"], 70, window.screen.get_height() // 10 * 8, 80, 40)
                 energyBox = guiClasses.WriteBox(170, 300, 150, 40, "Energy:", start_string="MeV")
                 filenameBox = guiClasses.WriteBox(170, 360, 150, 40, "Filename:", start_string=".txt")
-                filename, energy, back = get_energy(energyBox, filenameBox, back_button)
-                if energy is not None:
+                filename, shower_energy, back = get_energy(energyBox, filenameBox, back_button)
+                if shower_energy is not None:
                     atmosphere.main_atmosphere(filename, float(
                         energy))  # calls main_atmosphere from module atmosphere to simulate the particle shower with
                     # the given user inputs
                 if not back:
-                    screen_blank()
+                    screen_blank(LIGHTORANGE)
                     break
 
             elif option == "back":

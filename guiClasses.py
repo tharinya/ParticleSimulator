@@ -24,6 +24,14 @@ base_font = pygame.font.Font("freesansbold.ttf", 16)
 big_font = pygame.font.Font("freesansbold.ttf", 30)
 
 
+
+class Main():
+    def __init__(self, screen):
+        self.screen = screen
+
+
+
+
 class Ball:  # used to represent the particles when simulating their interaction
     def __init__(self, x, y, r, label, colour=DARKGREY):
         self.colour = colour
@@ -191,7 +199,7 @@ class Arrow(Button):  # for adjusting the energy
     def draw(self, screen):  # returns the button
         pygame.draw.rect(screen, self.colour if self.state == 0 else GREY, self.rect, width=5)
         text_surface = base_font.render("", True, DARKGREY)
-        screen.blit(text_surface, (self.rect.x + 10, self.rect.y + 12))
+        screen.blit(text_surface, (self.rect.x + 40, self.rect.y + 12))
         if self.up_down == 0:  # down arrow
             pygame.draw.polygon(screen, self.colour,
                                 [(self.w / 3 + self.x, self.y + self.h / 3), (self.x + 2 * self.w / 3,
@@ -219,8 +227,8 @@ class Combination:  # a compound of a WriteBox and an up arrow and down arrow, u
                                  start_string=self.start_string, expand=False)
         else:  # if the Combination has been previously instantiated and text has been passed into the parameter
             self.text = text
-        self.up_arrow = Arrow(self.colour, self.x + self.w_text + 4, y, self.w_arrow - 4, h // 2 - 2, 1)
-        self.down_arrow = Arrow(self.colour, self.x + self.w_text + 4, y + h // 2 + 2, self.w_arrow - 4, h // 2 - 2, 0)
+        self.up_arrow = Arrow(self.colour, self.x + self.w_text + 24, y, self.w_arrow - 4, h // 2 - 2, 1)
+        self.down_arrow = Arrow(self.colour, self.x + self.w_text + 24, y + h // 2 + 2, self.w_arrow - 4, h // 2 - 2, 0)
 
     def draw(self, screen):  # renders all components of the Combination
         self.text.draw(screen)
