@@ -147,21 +147,12 @@ def display_menu():
 
 # Displays options for particle interaction, returns selection
 def display_sim_menu():
-    text = guiClasses.big_font.render("Simulation Options:", True, DARKGREY, WHITE)
-    textRect = text.get_rect()
-    textRect.center = (window.screen.get_width() // 2, window.screen.get_height() - 740)
-    window.screen.blit(text, textRect)
+    back = guiClasses.Button(TEAL, ["BACK"], 70, window.screen.get_height() // 10 * 8, 120, 40)
 
-    back = guiClasses.Button(TEAL, ["BACK"], 70, 360 + 500, 120, 40)
-    back.draw(window.screen)
     interaction = guiClasses.Button(YELLOW, ["Interaction"], window.screen.get_width() // 2 - 190 / 2,
                                     window.screen.get_height() // 3 + 20, 190, 40)
-    interaction.draw(window.screen)
     shower = guiClasses.Button(RED, ["Particle Shower"], window.screen.get_width() // 2 - 190 / 2,
                                window.screen.get_height() // 3 + 70, 190, 40)
-    shower.draw(window.screen)
-
-    stats_screen([p1, p2])
 
     while True:
         pygame.display.update()
@@ -182,6 +173,17 @@ def display_sim_menu():
                 if back.state:
                     return "back"
 
+        screen_blank(LIGHTORANGE)
+        text = guiClasses.big_font.render("Simulation Options:", True, DARKGREY, WHITE)
+        textRect = text.get_rect()
+        textRect.center = (window.screen.get_width() // 2, window.screen.get_height() // 10)
+        window.screen.blit(text, textRect)
+        back.draw(window.screen)
+        shower.draw(window.screen)
+        interaction.draw(window.screen)
+
+        stats_screen([p1, p2])
+
 
 def error(message):
     error_message = guiClasses.WriteBox(window.screen.get_width() - 350, 120, 280, 40, "Error:", RED, string=message)
@@ -193,11 +195,11 @@ def error(message):
 # Displays the statistics of the chosen particle
 def stats_screen(particles):
     options_xb = X / 9 + 31
-    options = guiClasses.WriteBox(options_xb + 6, Y // 3, 300, 350, "", DARKGREY, string="")
+    options = guiClasses.WriteBox(options_xb + 6, Y // 3, 300, 260, "", DARKGREY, string="")
     options.draw(window.screen)
 
     options_x = options_xb + 6
-    options = guiClasses.WriteBox(options_x + 6, Y // 3 + 6, 288, 338, "", GREEN, string="")
+    options = guiClasses.WriteBox(options_x + 6, Y // 3 + 6, 288, 248, "", GREEN, string="")
     options.draw(window.screen)
 
     title = guiClasses.big_font.render(f"STATS:", True, DARKGREY, WHITE)
@@ -476,14 +478,14 @@ def main_interaction(p1, p2, energy, back_button, record):
 
     timecount = 0
 
-    play = guiClasses.Button(GREEN, ["PLAY", "PAUSE"], window.screen.get_width // 10 * 8, window.screen.get_height // 2 + 150, 190,
+    play = guiClasses.Button(GREEN, ["PLAY", "PAUSE"], X // 10 * 8, Y // 2 + 150, 190,
                              40)  # play/pause button
-    graph = guiClasses.Button(ORANGE, ["COMPARE"], window.screen.get_width // 10 * 8, window.screen.get_height // 2 + 100, 190,
+    graph = guiClasses.Button(ORANGE, ["COMPARE"], X // 10 * 8, Y // 2 + 100, 190,
                               40)  # button to display graphs
-    clear = guiClasses.Button(YELLOW, ["CLEAR"], window.screen.get_width // 10 * 8, window.screen.get_height // 2 + 50, 190, 40)
-    scaling = guiClasses.Combination(LIGHTPINK, "1px:", "", window.screen.get_width // 10 * 8, window.screen.get_height // 2, 190, 40,
+    clear = guiClasses.Button(YELLOW, ["CLEAR"], X // 10 * 8, Y // 2 + 50, 190, 40)
+    scaling = guiClasses.Combination(LIGHTPINK, "1px:", "", X // 10 * 8, Y // 2, 190, 40,
                                      "10^-21m")
-    time_scaling = guiClasses.Combination(LIGHTBLUE, "1 frame:", "", window.screen.get_width // 10 * 8, window.screen.get_height // 2 - 50,
+    time_scaling = guiClasses.Combination(LIGHTBLUE, "1 frame:", "", X // 10 * 8, Y // 2 - 50,
                                           190, 40, "5*10^-31s")
 
     traces = []  # list containing all traces (previous positions as Ball objects)
